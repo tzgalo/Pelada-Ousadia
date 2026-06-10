@@ -311,8 +311,13 @@ function showApp() {
 
 function isAdminUser() {
   if(!D.curUser||D.curUser.isGuest) return false;
+  // If no players yet, first user is admin
+  if(D.jogadores.length===0) return true;
   const j = D.jogadores.find(x=>x.id===D.curUser.id);
-  return j?.isAdmin||false;
+  if(j?.isAdmin) return true;
+  // Fallback: check localStorage admins list
+  const admins = LS.get('admins')||[];
+  return admins.includes(D.curUser.id)||admins.includes(D.curUser.nome?.toLowerCase());
 }
 
 // ── NAVIGATION ──────────────────────────
