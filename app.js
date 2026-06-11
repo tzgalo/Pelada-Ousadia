@@ -6,7 +6,21 @@
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
 import { getFirestore, doc, collection, getDoc, getDocs, setDoc, addDoc, updateDoc, deleteDoc, onSnapshot, query, orderBy, serverTimestamp, arrayUnion, arrayRemove } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
 
+// ── FIREBASE CONFIG (embedded) ───────────
+const FB_CFG = {
+  apiKey: "AIzaSyCZC8hyGnkKizwNjkSxmXvls04lN4k2yxs",
+  authDomain: "pelada-ousadia-fd3b8.firebaseapp.com",
+  projectId: "pelada-ousadia-fd3b8",
+  storageBucket: "pelada-ousadia-fd3b8.firebasestorage.app",
+  messagingSenderId: "506751826277",
+  appId: "1:506751826277:web:d1b710ae0ea099167498c"
+};
+
 let db = null;
+try {
+  const fbApp = initializeApp(FB_CFG);
+  db = getFirestore(fbApp);
+} catch(e) { console.log('Firebase init error:', e); }
 
 // ── APP STATE ────────────────────────────
 const D = {
@@ -664,7 +678,7 @@ function renderJogadores() {
         <div class="player-avatar" style="${isMe?'border-color:var(--blue)':''}">${av}</div>
         <div class="player-info">
           <div class="player-name">${escHtml(j.nome)}${j.isAdmin?' <span class="badge badge-gold">ADM</span>':''}</div>
-          <div class="player-sub">${j.tipo==='avulso'?'Avulso':'Fixo'} · ${(j.domingos||[]).length} jogo${(j.domingos||[]).length!==1?'s':''}</div>
+          <div class="player-sub">${(j.domingos||[]).length} jogo${(j.domingos||[]).length!==1?'s':''}</div>
         </div>
         <div style="text-align:right">
           <div class="mono" style="font-size:13px;color:var(--gold)">${fmt2(calcIF(j))}</div>
@@ -952,6 +966,11 @@ function abrirPerfil(id) {
       <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmarDelJog('${j.id}')">🗑️ Remover</button>
     </div>`;
   }
+  // Own profile - can edit own nota
+  if(isMe) {
+    html += `<div class="divider"></div>
+    <button class="btn btn-outline btn-sm mt8" onclick="editarNota('${j.id}')">✏️ Editar minha nota (${fmt2(j.nota||5)})</button>`;
+  }
 
   // Domingos history
   if((j.domingos||[]).length) {
@@ -1058,11 +1077,7 @@ function abrirCadJogador(editId) {
       <input type="text" id="cad-nome" value="${escHtml(j?.nome||'')}" placeholder="Nome do jogador" autocapitalize="words"/></div>
     <div class="input-wrap"><label>Nota opinativa (0–10)</label>
       <input type="number" id="cad-nota" min="0" max="10" step="0.1" value="${j?.nota||5}"/></div>
-    <div class="input-wrap"><label>Tipo</label>
-      <select id="cad-tipo">
-        <option value="fixo" ${j?.tipo!=='avulso'?'selected':''}>Fixo</option>
-        <option value="avulso" ${j?.tipo==='avulso'?'selected':''}>Avulso</option>
-      </select></div>
+
     <button class="btn btn-gold" onclick="salvarCadJogador('${editId||''}')">SALVAR</button>
     <button class="btn btn-outline mt8" onclick="closeModals()">Cancelar</button>`);
 }
@@ -1070,7 +1085,7 @@ function abrirCadJogador(editId) {
 async function salvarCadJogador(editId) {
   const nome=document.getElementById('cad-nome').value.trim();
   const nota=parseFloat(document.getElementById('cad-nota').value)||5;
-  const tipo=document.getElementById('cad-tipo').value;
+  const tipo='fixo';
   if(!nome){toast('Digite um nome');return;}
   const id=editId||genId();
   const existing = D.jogadores.find(x=>x.id===editId);
