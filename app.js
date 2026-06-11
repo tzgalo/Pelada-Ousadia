@@ -1142,12 +1142,19 @@ function renderFlowSel(fc) {
   const all = [...D.jogadores].sort((a,b)=>a.nome?.localeCompare(b.nome));
   const sel = new Set(flowState.presentes||[]);
   const n = sel.size;
-  const validSort = n===10||n===15||n===20;
-  const validReg = n>0&&!validSort;
+  const busca = flowState.busca||'';
+  const filtrados = busca ? all.filter(j=>j.nome?.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').includes(busca.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''))) : all;
+  const todosSel = all.length>0 && all.every(j=>sel.has(j.id)||sel.has(j.nome));
 
   let html=`<div class="card-title">SELECIONAR PRESENTES (${n})</div>
-    <div style="max-height:55vh;overflow-y:auto;margin-bottom:12px">`;
-  html += all.map(j=>{
+    <div class="input-wrap">
+      <input type="text" id="busca-jogador" placeholder="🔍 Pesquisar jogador..." value="${escHtml(busca)}" oninput="flowState.busca=this.value;renderFlow()" style="margin-bottom:8px"/>
+    </div>
+    <button class="btn btn-outline btn-sm" style="margin-bottom:8px" onclick="toggleTodos()">
+      ${todosSel?'☐ Desmarcar todos':'☑ Marcar todos'}
+    </button>
+    <div style="max-height:50vh;overflow-y:auto;margin-bottom:12px">`;
+  html += filtrados.map(j=>{
     const checked=sel.has(j.id)||sel.has(j.nome);
     return `<div class="check-row" onclick="toggleSel('${j.id}')">
       <div class="check-box" id="chk-${j.id}" style="${checked?'background:var(--gold);border-color:var(--gold)':''}"></div>
@@ -1156,14 +1163,28 @@ function renderFlowSel(fc) {
     </div>`;
   }).join('');
   html+=`</div>
-    <button class="btn btn-gold" ${validSort?'':'disabled'} onclick="confirmarSel()">
-      ⚽ SORTEAR TIMES ${validSort?`(${n} jogadores)`:`(precisa 10, 15 ou 20)`}
+    <button class="btn btn-gold" ${n>=3?'':'disabled'} onclick="confirmarSel()">
+      ⚽ SORTEAR 3 TIMES (${n} jogadores)
     </button>
-    <button class="btn btn-outline mt8" ${validReg?'':'disabled'} onclick="registrarSemTimes()">
+    <button class="btn btn-outline mt8" ${n>0&&n<3?'':'disabled style="display:none"'} onclick="registrarSemTimes()">
       📋 REGISTRAR SEM TIMES
     </button>
     <button class="btn btn-outline mt8" onclick="fecharFlow()">Cancelar</button>`;
   fc.innerHTML=html;
+  // Keep focus on search
+  if(busca) document.getElementById('busca-jogador')?.focus();
+}
+
+function toggleTodos() {
+  const all = D.jogadores;
+  const sel = new Set(flowState.presentes||[]);
+  const todosSel = all.every(j=>sel.has(j.id)||sel.has(j.nome));
+  if(todosSel) {
+    flowState.presentes = [];
+  } else {
+    flowState.presentes = all.map(j=>j.id);
+  }
+  renderFlow();
 }
 
 function toggleSel(id) {
@@ -1174,8 +1195,7 @@ function toggleSel(id) {
 }
 
 function confirmarSel() {
-  const n=flowState.presentes.length;
-  flowState.timesN = n===20?4:n===15?3:2;
+  flowState.timesN = 3;
   flowState.step='times';
   sortearTimes();
   renderFlow();
@@ -1927,7 +1947,7 @@ Object.assign(window, {
   renderHome, renderJogadores, renderRanking, renderFinancas, renderOpcoes,
   abrirPerfil, editarNota, salvarNota, confirmarDelJog, delDomingo, delDomingo1, delDomingoTodos,
   abrirCadJogador, salvarCadJogador,
-  iniciarFlow, fecharFlow, confirmarData, toggleSel, confirmarSel, registrarSemTimes,
+  iniciarFlow, fecharFlow, confirmarData, toggleSel, toggleTodos, confirmarSel, registrarSemTimes,
   confirmarTimes, cancelarFlowPartida, proxStats, changeVal, votarMvp, encerrarMvp,
   confirmarPresenca, desmarcarPresenca, darBaixaPresenca, gerenciarPresenca,
   salvarDadosPresenca, adminAddPresenca, adminRemPresenca, cancelarSorteio, editarTimes, moverJogador,
