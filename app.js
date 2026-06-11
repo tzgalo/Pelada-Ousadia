@@ -1188,10 +1188,17 @@ function toggleTodos() {
 }
 
 function toggleSel(id) {
+  const lista = document.querySelector('#flow-content [style*="overflow-y:auto"]');
+  const scrollTop = lista ? lista.scrollTop : 0;
   const sel = new Set(flowState.presentes||[]);
   if(sel.has(id)) sel.delete(id); else sel.add(id);
   flowState.presentes = [...sel];
   renderFlow();
+  // Restore scroll position
+  requestAnimationFrame(() => {
+    const l = document.querySelector('#flow-content [style*="overflow-y:auto"]');
+    if(l) l.scrollTop = scrollTop;
+  });
 }
 
 function confirmarSel() {
