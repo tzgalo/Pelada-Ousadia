@@ -948,8 +948,8 @@ function abrirPerfil(id) {
       <button class="btn btn-outline btn-sm" style="color:var(--red)" onclick="confirmarDelJog('${j.id}')">🗑️ Remover</button>
     </div>`;
   }
-  // Own profile - can edit own nota
-  if(isMe) {
+  // Own profile - admins only can edit nota
+  if(isMe && isAdm) {
     html += `<div class="divider"></div>
     <button class="btn btn-outline btn-sm mt8" onclick="editarNota('${j.id}')">✏️ Editar minha nota (${fmt2(j.nota||5)})</button>`;
   }
@@ -1015,6 +1015,7 @@ function editarNota(id) {
     <button class="btn btn-outline mt8" onclick="closeModals()">Cancelar</button>`,'centered');
 }
 async function salvarNota(id) {
+  if(!isAdminUser()){toast('Sem permissão');return;}
   const v = parseFloat(document.getElementById('nota-val').value);
   if(isNaN(v)||v<0||v>10){toast('Nota deve ser entre 0 e 10');return;}
   const j=D.jogadores.find(x=>x.id===id); if(!j) return;
